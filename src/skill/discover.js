@@ -1,12 +1,15 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { fileURLToPath } from "node:url";
 
 let _skillCache = null;
 
 export async function discoverSkills() {
   if (_skillCache) return _skillCache;
+  const builtinDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "skills", "builtin");
   const dirs = [
+    builtinDir,
     path.join(os.homedir(), ".wrivon", "skills"),
     path.join(process.cwd(), ".wrivon", "skills"),
   ];

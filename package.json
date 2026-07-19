@@ -11,7 +11,8 @@
     "start": "node bin/wrivon.js",
     "setup": "node scripts/setup.js",
     "smoke": "node scripts/smoke.js",
-    "postinstall": "node -e \"try{require('fs').chmodSync('bin/wrivon.js',0o755)}catch(e){}\""
+    "install-skills": "node scripts/install-skills.js",
+    "postinstall": "node scripts/install-skills.js"
   },
   "engines": {
     "node": ">=18.0.0"

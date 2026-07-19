@@ -72,6 +72,20 @@ if (existsSync(CFG_PATH)) {
   }
 }
 
+// ---- auto-install built-in skills on first run (fallback for global installs) ----
+try {
+  const { existsSync } = await import("node:fs");
+  const { resolve: resolvePath } = await import("node:path");
+  const { homedir } = await import("node:os");
+  const marker = resolvePath(homedir(), ".wrivon", "skills", ".installed");
+  if (!existsSync(marker)) {
+    const installScript = resolvePath(PROJECT, "scripts", "install-skills.js");
+    if (existsSync(installScript)) {
+      await import(pathToFileURL(installScript));
+    }
+  }
+} catch { /* non-critical */ }
+
 // ---- cleanup on exit ----
 process.on("exit", () => {
   // Stop any running HTTP servers

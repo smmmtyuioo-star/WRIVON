@@ -32,8 +32,8 @@ Join the Discord to report bugs, request features, or just chat about the projec
 ## Quick Start
 
 ```bash
-git clone <repo-url>
-cd wrivon
+git clone https://github.com/smmmtyuioo-star/WRIVON
+cd WRIVON
 npm install
 npm run setup
 npm start
@@ -160,6 +160,10 @@ Project-level `.wrivon/config.json` overrides user-level. Use `"env:VARNAME"` to
 ### Manual setup (no wizard)
 
 ```bash
+git clone https://github.com/smmmtyuioo-star/WRIVON
+cd WRIVON
+npm install
+
 # Create .env.local with your keys
 echo NVIDIA_API_KEY=nvapi-your-key-here > .env.local
 echo CLOUDFLARE_API_KEY=your-cf-key >> .env.local

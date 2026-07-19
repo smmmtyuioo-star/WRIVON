@@ -22,7 +22,7 @@ Join the Discord to report bugs, request features, or just chat about the projec
 - **Agentic coding** — reads, writes, edits, and searches files using AI-powered tools. Build anything with natural language prompts.
 - **Multiple free AI providers** — NVIDIA NIM (~90 free models with speed tiers), Cloudflare Workers AI, Groq (fast LPU inference)
 - **Smart model tiers** — `/model` shows a numbered picker: 1) Fast, 2) Coder, 3) Power — no memorized model IDs
-- **Chat modes** — `/ask` (read-only Q&A), `/plan` (explore + structured plan), `/code` (full tool access)
+- **Chat modes** — `/ask` (read-only Q&A), `/plan` (explore + structured plan), `/code` (full tool access), `/build` (one-shot app builder)
 - **Local web server** — `/serve 8080` to preview websites you build, with SPA routing and directory listings
 - **Web fetch & search** — the AI can browse documentation and search the web for solutions
 - **Built-in skills** — 19 pre-installed skill packs across 7 categories: code-review, debugging, deep-research, TDD, planning, architecture, frontend-design, GitHub workflow, agent-orchestration (5 agents) + 6 domain packs (engineering, marketing, c-level-advisor, research, business, compliance) covering 362 extracted skills from the claude-code-skills library
@@ -118,6 +118,7 @@ The server serves static files (HTML, CSS, JS) with proper MIME types, directory
 | `/code` | Switch to code mode (full tool access) |
 | `/ask` | Switch to ask mode (read-only) |
 | `/plan` | Switch to plan mode (explore + structured plan) |
+| `/build <prompt>` | Full-stack one-shot builder — plan, generate files, install deps, report |
 | `/model` | Interactive model picker (1=Fast, 2=Coder, 3=Power) |
 | `/model <id>` | Set model by exact ID |
 | `/models` | List curated models for current provider |

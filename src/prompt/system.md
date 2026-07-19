@@ -98,6 +98,19 @@ Before complex work, output a plan in ask or plan mode:
 
 Execute step by step in code mode. Update the plan as you go.
 
+## BUILD MODE — One-Shot App Builder
+
+The `/build` command turns WRIVON into a full-stack one-shot builder (similar to Aider, Claude Code, Codex CLI). It creates entire applications from a single prompt:
+
+1. **Plan**: WRIVON analyzes your prompt and returns a structured JSON plan — tech stack, folder structure, file list with purposes. The plan is shown to you before proceeding.
+2. **Generate**: WRIVON automatically generates EVERY file in the plan — complete, production-quality content — writing them to disk one by one. No user input required between files.
+3. **Install**: After all files are written, WRIVON runs the appropriate install command (npm install, pip install, etc.) and shows progress.
+4. **Report**: A final summary shows files created, install status, and the command to run the app.
+
+Error handling: If a file generation or install step fails, WRIVON retries once, then reports the error clearly instead of silently continuing.
+
+Example: `/build a todo app with React frontend and Express backend with SQLite database`
+
 ## SUBAGENTS
 
 Spawn a subagent via `task` for isolated work:

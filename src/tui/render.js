@@ -225,5 +225,62 @@ export function renderStream(evt, cfg) {
     case "final":
       if (evt.note) process.stdout.write(`  ${YELLOW}⚠${RESET} ${evt.note}\n`);
       break;
+
+    case "plan_ready": {
+      const p = evt.plan;
+      process.stdout.write(`\n${BOLD}${TEAL}📋 Build Plan${RESET}\n`);
+      process.stdout.write(`  ${BOLD}App:${RESET} ${p.app_name || "Unnamed"}\n`);
+      process.stdout.write(`  ${BOLD}Stack:${RESET} ${(p.tech_stack || []).join(", ")}\n`);
+      process.stdout.write(`  ${BOLD}Root:${RESET} ${p.root_dir || "."}\n`);
+      process.stdout.write(`  ${BOLD}Files:${RESET} ${(p.files || []).length} files\n`);
+      const files = p.files || [];
+      for (const f of files.slice(0, 15)) {
+        process.stdout.write(`    ${GREEN}📄${RESET} ${f.path} ${GRAY}— ${(f.purpose || "").slice(0, 60)}${RESET}\n`);
+      }
+      if (files.length > 15) process.stdout.write(`    ${GRAY}... and ${files.length - 15} more files${RESET}\n`);
+      process.stdout.write(`\n${YELLOW}🔨 Building...${RESET}\n`);
+      break;
+    }
+
+    case "file_created":
+      process.stdout.write(`  ${GREEN}✓${RESET} ${evt.path}\n`);
+      break;
+
+    case "file_failed":
+      process.stdout.write(`  ${RED}✗${RESET} ${evt.path} ${GRAY}— ${evt.error || "failed"}${RESET}\n`);
+      break;
+
+    case "install_start": {
+      const cmd = evt.command || "install";
+      process.stdout.write(`\n${CYAN}📦 Installing dependencies:${RESET} ${cmd}\n`);
+      break;
+    }
+
+    case "install_done": {
+      if (evt.ok) {
+        process.stdout.write(`  ${GREEN}✓${RESET} Dependencies installed\n`);
+      } else {
+        const out = (evt.output || "").slice(0, 300);
+        process.stdout.write(`  ${YELLOW}⚠${RESET} Install had issues:\n  ${GRAY}${out.replace(/\n/g, "\n  ")}${RESET}\n`);
+      }
+      break;
+    }
+
+    case "build_summary": {
+      const s = evt.summary;
+      process.stdout.write(`\n${BOLD}${GREEN}✓ Build Complete${RESET}\n`);
+      process.stdout.write(`  ${BOLD}App:${RESET} ${s.appName}\n`);
+      process.stdout.write(`  ${BOLD}Location:${RESET} ${s.rootDir}\n`);
+      process.stdout.write(`  ${BOLD}Stack:${RESET} ${s.techStack}\n`);
+      process.stdout.write(`  ${BOLD}Files:${RESET} ${s.filesCreated} created`);
+      if (s.filesFailed) process.stdout.write(`, ${s.filesFailed} failed`);
+      process.stdout.write("\n");
+      process.stdout.write(`  ${BOLD}Run:${RESET} cd ${s.rootDir} && ${s.runCommand}\n`);
+      break;
+    }
   }
+}
+
+export function renderBuildEvent(evt, cfg) {
+  renderStream(evt, cfg);
 }

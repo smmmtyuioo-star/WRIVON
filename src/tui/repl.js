@@ -16,13 +16,14 @@ import { NVIDIA_MODELS, GROQ_MODELS } from "../config/providers.js";
 import { startServer, stopServer, listServers, stopAllServers } from "../tools/serve.js";
 import { discoverSkills, loadSkill } from "../skill/discover.js";
 import { indexKnowledge, loadDomainKnowledge, listDomains } from "../skill/knowledge.js";
+import { runBuild } from "../agent/build.js";
 
 const YELLOW = "\x1b[33m";
 const GRAY = "\x1b[90m";
 const RESET = "\x1b[0m";
 
 // Pre-register default slash commands. Users can add more via config.
-const DEFAULT_COMMANDS = ["help", "model", "models", "provider", "providers", "connect", "disconnect", "test", "map", "diff", "prompt", "config", "export", "name", "search", "init", "refactor", "review", "clear", "undo", "commit", "push", "sessions", "resume", "status", "mode", "ask", "plan", "code", "skills", "agents", "knowledge", "serve", "servers", "stop", "exit"];
+const DEFAULT_COMMANDS = ["help", "model", "models", "provider", "providers", "connect", "disconnect", "test", "map", "diff", "prompt", "config", "export", "name", "search", "init", "refactor", "review", "clear", "undo", "commit", "push", "sessions", "resume", "status", "mode", "ask", "plan", "code", "build", "skills", "agents", "knowledge", "serve", "servers", "stop", "exit"];
 
 function printHelp() {
   const mode = globalThis.__WRIVON_CURRENT_MODE || "code";
@@ -40,6 +41,7 @@ function printHelp() {
   ${VIOLET}/code${RESET}                     Code mode — full tool access, edit files
   ${VIOLET}/ask${RESET}                      Ask mode — read-only Q&A, no edits
   ${VIOLET}/plan${RESET}                     Plan mode — explore + structured plan
+  ${VIOLET}/build <prompt>${RESET}           Build mode — create full apps from one prompt
   ${VIOLET}/mode${RESET}                     Show/switch chat mode
 
   ── Model & Provider ────────────────────────────────
@@ -667,6 +669,39 @@ After applying changes, run the test suite to verify nothing is broken.`;
         messages.push({ role: "system", content: CHAT_MODES.code.instruction });
         console.log(`\n${GREEN}✓${RESET} Switched to ${getModeLabel("code")} mode. Full tool access.`);
         return true;
+
+      case "/build": {
+        if (!arg) { console.log(`  ${YELLOW}Usage: /build <description of app to build>${RESET}\n  Example: /build a todo app with React frontend and Express backend`); return true; }
+        startSpinner("Planning your app...");
+        const buildResult = await runBuild({
+          userText: arg,
+          messages,
+          provider: currentProvider,
+          cfg,
+          session,
+          onEvent: (evt) => {
+            stopSpinner();
+            renderBuildEvent(evt, cfg);
+          },
+          signal: abortController.signal,
+        });
+        if (buildResult) {
+          const s = buildResult;
+          console.log(`\n${BOLD}${GREEN}✓ Build Complete${RESET}`);
+          console.log(`  ${BOLD}App:${RESET} ${s.appName}`);
+          console.log(`  ${BOLD}Location:${RESET} ${s.rootDir}`);
+          console.log(`  ${BOLD}Stack:${RESET} ${s.techStack}`);
+          console.log(`  ${BOLD}Files:${RESET} ${s.filesCreated} created${s.filesFailed ? `, ${s.filesFailed} failed` : ""}`);
+          if (s.installOk) console.log(`  ${BOLD}Deps:${RESET} ${GREEN}installed${RESET}`);
+          else if (s.filesCreated > 0) console.log(`  ${BOLD}Deps:${RESET} ${YELLOW}install may have issues${RESET}`);
+          console.log(`  ${BOLD}Run:${RESET} cd ${s.rootDir} && ${s.runCommand}`);
+          if (s.failedFiles.length) {
+            console.log(`  ${YELLOW}Failed files:${RESET}`);
+            for (const f of s.failedFiles) console.log(`    ${RED}✗${RESET} ${f}`);
+          }
+        }
+        return true;
+      }
 
       case "/skills":
       case "/agents": {

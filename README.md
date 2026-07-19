@@ -9,6 +9,7 @@
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-green" alt="License: MIT"></a>
   <a href="#"><img src="https://img.shields.io/badge/Status-v0.2_–_Early_Stage-yellow" alt="Status: v0.2"></a>
   <a href="#"><img src="https://img.shields.io/badge/Setup-BYOK_–_Bring_Your_Own_Key-orange" alt="BYOK"></a>
+  <a href="https://github.com/smmmtyuioo-star/WRIVON/actions"><img src="https://github.com/smmmtyuioo-star/WRIVON/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
 </p>
 
 ## Installation
@@ -69,10 +70,12 @@ Once configured, just type what you want:
 
 ```
 WRIVON/
-├── node/          Node.js implementation (src/, bin/, scripts/)
-├── python/        Python implementation (wrivon/ package)
-├── _extracted/    Knowledge base (15,134 extracted skill files)
-├── .env.local     Shared API keys (gitignored)
+├── node/                Node.js implementation (src/, bin/, scripts/)
+├── python/              Python implementation (wrivon/ package)
+├── _extracted/          Knowledge base (15,134 extracted skill files)
+├── wrivon.config.json   Shared config — providers, commands, tools, modes
+├── .github/workflows/   CI workflows (Node + Python on every push)
+├── .env.local           Shared API keys (gitignored)
 └── README.md
 ```
 
@@ -88,6 +91,8 @@ WRIVON/
 - **Knowledge system** — `/knowledge <domain>` loads extracted expertise
 - **Git integration** — `/diff`, `/commit`, `/push`
 - **Session management** — auto-save, resume with `/resume`
+- **Shared config** — single `wrivon.config.json` drives both Node.js and Python implementations
+- **CI tested** — GitHub Actions runs Node smoke test + Python pytest on every push
 
 ## Commands
 

@@ -1,0 +1,40 @@
+{
+  "provider": "nvidia",
+  "providers": {
+    "ollama": {
+      "baseUrl": "http://127.0.0.1:11434",
+      "model": "minimax-m3",
+      "kind": "ollama"
+    },
+    "openai": {
+      "baseUrl": "https://api.openai.com/v1",
+      "apiKey": "env:OPENAI_API_KEY",
+      "model": "gpt-4o-mini",
+      "kind": "openai"
+    },
+    "nvidia": {
+      "baseUrl": "https://integrate.api.nvidia.com/v1",
+      "apiKey": "env:NVIDIA_API_KEY",
+      "model": "meta/llama-3.1-70b-instruct",
+      "kind": "openai"
+    },
+    "cloudflare": {
+      "baseUrl": "https://api.cloudflare.com/client/v4/accounts",
+      "apiKey": "env:CLOUDFLARE_API_KEY",
+      "accountId": "env:CLOUDFLARE_ACCOUNT_ID",
+      "model": "@cf/meta/llama-3.1-70b-instruct",
+      "kind": "cloudflare"
+    }
+  },
+  "tools": {
+    "bash": { "timeoutMs": 120000 }
+  },
+  "sandbox": {
+    "filesystem": "workspace-write",
+    "network": "allow"
+  },
+  "ui": {
+    "stream": true,
+    "showTools": true
+  }
+}

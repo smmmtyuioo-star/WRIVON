@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <!--
+    WRIVON logo-mono — single-color (white) version for one-color
+    print/stamping contexts. No gradient, no background by default.
+  -->
+
+  <!-- W shape — two chevrons, single path -->
+  <path d="M 60,140 L 130,290 L 200,140 L 270,290 L 340,140"
+        fill="none" stroke="#FFFFFF" stroke-width="28"
+        stroke-linecap="square" stroke-linejoin="miter" stroke-miterlimit="4"/>
+</svg>

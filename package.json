@@ -1,0 +1,21 @@
+{
+  "name": "wrivon",
+  "version": "0.1.0",
+  "description": "WRIVON - a cross-shell CLI AI coding agent. Talks to Ollama, OpenAI, NVIDIA NIM, and Cloudflare Workers AI.",
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "wrivon": "bin/wrivon.js"
+  },
+  "scripts": {
+    "start": "node bin/wrivon.js",
+    "setup": "node scripts/setup.js",
+    "smoke": "node scripts/smoke.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": ["ai", "cli", "agent", "ollama", "openai", "nvidia", "cloudflare", "codex", "claude-code", "opencode", "aider"],
+  "license": "MIT",
+  "dependencies": {}
+}

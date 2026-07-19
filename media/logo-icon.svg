@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <!--
+    WRIVON logo-icon — square glyph mark for favicon, npm, terminal tab.
+    A geometric W built from two terminal-prompt chevrons (>).
+    Each V-shaped valley matches the 60° opening angle of a > prompt glyph.
+  -->
+  <defs>
+    <linearGradient id="wg" x1="0" y1="0" x2="400" y2="400" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#2DE1C2"/>
+      <stop offset="100%" stop-color="#8B7FFF"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="400" height="400" rx="32" fill="#14121F"/>
+
+  <!--
+    W shape — two chevrons, single path.
+    Left chevron tip at (130,290), right at (270,290).
+    Both have ~60° opening, matching a > prompt symbol.
+  -->
+  <path d="M 60,140 L 130,290 L 200,140 L 270,290 L 340,140"
+        fill="none" stroke="url(#wg)" stroke-width="28"
+        stroke-linecap="square" stroke-linejoin="miter" stroke-miterlimit="4"/>
+</svg>

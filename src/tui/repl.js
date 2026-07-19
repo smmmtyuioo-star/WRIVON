@@ -6,52 +6,75 @@ import readline from "node:readline";
 import process from "node:process";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { loadSystemPrompt, runTurn } from "../agent/loop.js";
+import { loadSystemPrompt, runTurn, CHAT_MODES } from "../agent/loop.js";
 import { openSession, listSessions, loadSession, setSessionName } from "../session/store.js";
 import { createProvider } from "../llm/index.js";
 import { createOpenAICompat } from "../llm/openai.js";
 import { renderStream, printSplash, startSpinner, stopSpinner, drawInputBar } from "./render.js";
 import { buildRepoMap, renderRepoMap, getCachedRepoMap } from "../repo/map.js";
 import { NVIDIA_MODELS, GROQ_MODELS } from "../config/providers.js";
+import { startServer, stopServer, listServers, stopAllServers } from "../tools/serve.js";
 
 const YELLOW = "\x1b[33m";
 const GRAY = "\x1b[90m";
 const RESET = "\x1b[0m";
 
 // Pre-register default slash commands. Users can add more via config.
-const DEFAULT_COMMANDS = ["help", "model", "models", "provider", "providers", "connect", "disconnect", "test", "map", "diff", "prompt", "config", "export", "name", "search", "init", "refactor", "review", "clear", "undo", "commit", "push", "sessions", "resume", "status", "exit"];
+const DEFAULT_COMMANDS = ["help", "model", "models", "provider", "providers", "connect", "disconnect", "test", "map", "diff", "prompt", "config", "export", "name", "search", "init", "refactor", "review", "clear", "undo", "commit", "push", "sessions", "resume", "status", "mode", "ask", "plan", "code", "serve", "servers", "stop", "exit"];
 
 function printHelp() {
+  const mode = globalThis.__WRIVON_CURRENT_MODE || "code";
+  const modeStr = getModeLabel(mode);
   console.log(`
   ${BOLD}WRIVON — All Commands${RESET}
 
+  ${GRAY}Current mode: ${modeStr}${RESET}
+
+  ── Navigation ──────────────────────────────────────
   ${VIOLET}/help${RESET}                     Show this help
-  ${VIOLET}/model${RESET}                    Switch model (interactive picker: 1=Fast 2=Coder 3=Power)
-  ${VIOLET}/model <id>${RESET}               Set model by exact ID
+  ${VIOLET}/exit${RESET}                     Quit
+
+  ── Modes ────────────────────────────────────────────
+  ${VIOLET}/code${RESET}                     Code mode — full tool access, edit files
+  ${VIOLET}/ask${RESET}                      Ask mode — read-only Q&A, no edits
+  ${VIOLET}/plan${RESET}                     Plan mode — explore + structured plan
+  ${VIOLET}/mode${RESET}                     Show/switch chat mode
+
+  ── Model & Provider ────────────────────────────────
+  ${VIOLET}/model${RESET}                    Switch model (interactive picker)
   ${VIOLET}/models${RESET}                   List curated models for current provider
   ${VIOLET}/provider <name>${RESET}          Switch provider
-  ${VIOLET}/providers${RESET}                List all configured providers with status
-  ${VIOLET}/connect${RESET}                  Add a new API provider (bring your own key)
+  ${VIOLET}/providers${RESET}                List all configured providers
+  ${VIOLET}/connect${RESET}                  Add a new API provider
   ${VIOLET}/disconnect <name>${RESET}        Remove a configured provider
-  ${VIOLET}/status${RESET}                   Show current model, provider, session info
+  ${VIOLET}/test [provider]${RESET}          Test API connectivity
+
+  ── Sessions ─────────────────────────────────────────
   ${VIOLET}/sessions [--all]${RESET}         List past sessions
   ${VIOLET}/resume <id>${RESET}              Load a past session
   ${VIOLET}/clear${RESET}                    Clear conversation (keeps system prompt)
   ${VIOLET}/undo${RESET}                     Remove last turn
+  ${VIOLET}/export [--json]${RESET}          Export session as markdown or JSON
+  ${VIOLET}/search <query>${RESET}           Search past sessions
+  ${VIOLET}/name [<name>]${RESET}            Name the current session
+
+  ── Code & Git ──────────────────────────────────────
   ${VIOLET}/map${RESET}                      Show project structure
   ${VIOLET}/diff [target]${RESET}            Show git diff (uncommitted|staged|HEAD~1)
   ${VIOLET}/review [target]${RESET}          Code review
   ${VIOLET}/refactor <target>${RESET}        Refactoring mode
   ${VIOLET}/init${RESET}                     Project memory setup
-  ${VIOLET}/test [provider]${RESET}          Test API connectivity
-  ${VIOLET}/export [--json]${RESET}          Export session as markdown or JSON
-  ${VIOLET}/search <query>${RESET}           Search past sessions
+  ${VIOLET}/commit [message]${RESET}         Stage all + commit (auto-generates message)
+  ${VIOLET}/push${RESET}                     Push current branch to remote
   ${VIOLET}/prompt${RESET}                   Show the system prompt
   ${VIOLET}/config [key=val]${RESET}         View or set config
-  ${VIOLET}/name [<name>]${RESET}            Name the current session
-  ${VIOLET}/commit [message]${RESET}         Stage all + commit (auto-generates message if omitted)
-  ${VIOLET}/push${RESET}                     Push current branch to remote
-  ${VIOLET}/exit${RESET}                     Quit
+  ${VIOLET}/status${RESET}                   Show model, provider, session, context
+
+  ── Web Server ──────────────────────────────────────
+  ${VIOLET}/serve <port> [dir]${RESET}       Start local HTTP server
+  ${VIOLET}/servers${RESET}                  List active HTTP servers
+  ${VIOLET}/stop <port>${RESET}              Stop a server
+  ${VIOLET}/stop --all${RESET}               Stop all servers
 
   ${GRAY}Everything else is sent as a prompt to the AI agent.${RESET}
 `.trim());
@@ -71,6 +94,17 @@ export async function repl(provider, cfg) {
   let session = await openSession(null, { provider: cfg.provider, model: currentProvider.model, cwd: process.cwd() });
   sessionId = session.id;
   let turnCount = 0;
+  let initialMode = globalThis.__WRIVON_INITIAL_MODE || "code";
+  delete globalThis.__WRIVON_INITIAL_MODE;
+  let currentMode = initialMode;
+  let modeInstructionInjected = false;
+
+  globalThis.__WRIVON_CURRENT_MODE = initialMode;
+
+  // Inject initial mode instruction if not code
+  if (initialMode !== "code") {
+    messages.push({ role: "system", content: CHAT_MODES[initialMode].instruction });
+  }
 
   printBanner(cfg);
 
@@ -160,6 +194,7 @@ export async function repl(provider, cfg) {
       provider: currentProvider,
       cfg,
       session,
+      mode: currentMode,
       signal: abortController.signal,
       onEvent: (evt) => {
         if (evt.kind === "stream_start" || evt.kind === "token") stopSpinner();
@@ -295,7 +330,6 @@ export async function repl(provider, cfg) {
         return true;
 
       case "/status": {
-        // Estimate token usage
         let chars = 0;
         for (const m of messages) {
           if (m.content) chars += m.content.length;
@@ -310,6 +344,7 @@ export async function repl(provider, cfg) {
         const limit = 32000;
         const pct = Math.round((estTokens / limit) * 100);
         const bar = pct > 80 ? "🟡" : pct > 60 ? "🟢" : "🟢";
+        console.log(`  Mode:     ${getModeLabel(currentMode)}`);
         console.log(`  Provider: ${cfg.provider}`);
         console.log(`  Model:    ${currentProvider.model}`);
         console.log(`  CWD:      ${process.cwd()}`);
@@ -579,8 +614,99 @@ After applying changes, run the test suite to verify nothing is broken.`;
         await runPush();
         return true;
 
+      case "/mode": {
+        if (!arg) {
+          console.log(`\n${BOLD}Current mode:${RESET} ${getModeLabel(currentMode)}`);
+          console.log(`\nAvailable modes:`);
+          for (const [key, m] of Object.entries(CHAT_MODES)) {
+            const active = key === currentMode ? ` ${GREEN}← active${RESET}` : "";
+            console.log(`  /mode ${key.padEnd(8)} ${m.label} ${GRAY}— ${m.description}${RESET}${active}`);
+          }
+          return true;
+        }
+        const newMode = arg.toLowerCase();
+        if (!CHAT_MODES[newMode]) {
+          console.log(`Unknown mode: "${arg}". Available: ${Object.keys(CHAT_MODES).join(", ")}`);
+          return true;
+        }
+        currentMode = newMode;
+        globalThis.__WRIVON_CURRENT_MODE = newMode;
+        modeInstructionInjected = false;
+        const modeMsg = { role: "system", content: CHAT_MODES[newMode].instruction };
+        messages.push(modeMsg);
+        console.log(`\n${GREEN}✓${RESET} Switched to ${getModeLabel(newMode)} mode. ${CHAT_MODES[newMode].description}`);
+        return true;
+      }
+
+      case "/ask":
+        currentMode = "ask";
+        globalThis.__WRIVON_CURRENT_MODE = "ask";
+        messages.push({ role: "system", content: CHAT_MODES.ask.instruction });
+        console.log(`\n${GREEN}✓${RESET} Switched to ${getModeLabel("ask")} mode. I'll only read and explain — no edits.`);
+        return true;
+
+      case "/plan":
+        currentMode = "plan";
+        globalThis.__WRIVON_CURRENT_MODE = "plan";
+        messages.push({ role: "system", content: CHAT_MODES.plan.instruction });
+        console.log(`\n${GREEN}✓${RESET} Switched to ${getModeLabel("plan")} mode. Explore first, then output a plan.`);
+        return true;
+
+      case "/code":
+        currentMode = "code";
+        globalThis.__WRIVON_CURRENT_MODE = "code";
+        messages.push({ role: "system", content: CHAT_MODES.code.instruction });
+        console.log(`\n${GREEN}✓${RESET} Switched to ${getModeLabel("code")} mode. Full tool access.`);
+        return true;
+
+      case "/serve": {
+        const serveParts = arg.split(/\s+/);
+        const servePort = serveParts[0] || "8080";
+        const serveDir = serveParts[1] || ".";
+        const p = parseInt(servePort, 10);
+        if (isNaN(p) || p < 1 || p > 65535) {
+          console.log(`  ${RED}✗${RESET} Invalid port: ${servePort}`);
+          return true;
+        }
+        const result = await startServer(p, serveDir);
+        if (result.ok) {
+          console.log(`  ${GREEN}✓${RESET} ${result.output}`);
+        } else {
+          console.log(`  ${RED}✗${RESET} ${result.error}`);
+        }
+        return true;
+      }
+
+      case "/servers": {
+        const sr = listServers();
+        console.log(sr.output);
+        return true;
+      }
+
+      case "/stop": {
+        const stopPort = parseInt(arg, 10);
+        if (isNaN(stopPort)) {
+          // Stop all or show usage
+          if (arg === "--all") {
+            const r = stopAllServers();
+            console.log(`  ${GREEN}✓${RESET} ${r.output}`);
+          } else {
+            console.log("Usage: /stop <port> | /stop --all");
+          }
+          return true;
+        }
+        const r = stopServer(stopPort);
+        if (r.ok) {
+          console.log(`  ${GREEN}✓${RESET} ${r.output}`);
+        } else {
+          console.log(`  ${YELLOW}⚠${RESET} ${r.error}`);
+        }
+        return true;
+      }
+
       case "/exit":
       case "/quit":
+        stopAllServers();
         console.log("Goodbye.");
         process.exit(0);
         return true;
@@ -851,6 +977,11 @@ function tierLabel(m) {
   if (m.tier === 2) return `${YELLOW}Tier 2 — Balanced${RESET}`;
   if (m.tier === 3) return `${RED}Tier 3 — Power${RESET}`;
   return "";
+}
+
+function getModeLabel(mode) {
+  const m = CHAT_MODES[mode];
+  return m ? `${m.label} ${GRAY}(${m.description})${RESET}` : mode;
 }
 
 function getModelTierForProvider(providerName, modelId) {

@@ -84,7 +84,7 @@ function visLen(s) {
 export function printSplash(cfg, tierName) {
   const p = cfg.provider;
   const m = cfg.providers?.[p]?.model || cfg.model;
-  const ver = "v0.2";
+  const ver = "v0.2.0";
   const c = cols();
   const inner = c - 4;
   const top = `┌${"─".repeat(c - 2)}┐`;
@@ -109,6 +109,7 @@ export function printSplash(cfg, tierName) {
   const cmds = [
     `${VIOLET}/help${RESET}   Show all commands`,
     `${VIOLET}/model${RESET}  Switch model (1=Fast 2=Coder 3=Power)`,
+    `${VIOLET}/code${RESET}   Mode: ask | plan | code`,
     `${VIOLET}/exit${RESET}   Quit`,
   ];
   for (const cmd of cmds) {
@@ -119,23 +120,25 @@ export function printSplash(cfg, tierName) {
   process.stdout.write(`${TEAL}${bot}${RESET}\n`);
 }
 
-// ── Bottom input bar: boxed row with hint + model ────────────────────
+// ── Bottom input bar: boxed row with hint + mode + model ────────────
 export function drawInputBar(provider, model) {
   if (!TTY) return;
   const c = cols();
   const r = rows();
+  const mode = globalThis.__WRIVON_CURRENT_MODE || "code";
+  const modeTag = mode === "ask" ? `${YELLOW}ask${RESET}` : mode === "plan" ? `${CYAN}plan${RESET}` : `${GREEN}code${RESET}`;
   const hint = `${GRAY}enter to send${RESET}`;
-  const right = `${CYAN}${provider}/${model}${RESET}`;
+  const right = `${modeTag} ${CYAN}${provider}/${model}${RESET}`;
   const inner = c - 4;
   const gap = inner - visLen(hint) - visLen(right) - 2;
   const gapStr = gap > 0 ? " ".repeat(gap) : " ";
 
-  process.stdout.write(`\x1b7`); // save cursor
+  process.stdout.write(`\x1b7`);
   if (r >= 2) {
     process.stdout.write(`\x1b[${r - 1};1f${TEAL}┌${"─".repeat(c - 2)}┐${RESET}`);
   }
   process.stdout.write(`\x1b[${r};1f${TEAL}│${RESET} ${hint}${gapStr}${right} ${TEAL}│${RESET}`);
-  process.stdout.write(`\x1b8`); // restore cursor
+  process.stdout.write(`\x1b8`);
 }
 
 // ── Redraw bottom bar (call after output) ────────────────────────────

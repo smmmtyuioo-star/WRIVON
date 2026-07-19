@@ -72,5 +72,11 @@ if (existsSync(CFG_PATH)) {
   }
 }
 
+// ---- cleanup on exit ----
+process.on("exit", () => {
+  // Stop any running HTTP servers
+  import(pathToFileURL(resolve(DIR, "..", "src", "tools", "serve.js"))).then((m) => m.stopAllServers()).catch(() => {});
+});
+
 // ---- launch ----
 import(pathToFileURL(MAIN));

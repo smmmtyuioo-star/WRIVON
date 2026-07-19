@@ -8,6 +8,31 @@ import { buildRepoMap, renderRepoMap } from "../repo/map.js";
 const MAX_TURNS = 25;
 const SYSTEM_PROMPT_PATH = path.join(import.meta.dirname, "..", "prompt", "system.md");
 
+// Chat modes
+export const CHAT_MODES = {
+  code: {
+    name: "code",
+    label: "💻 Code",
+    description: "Full tool access — edit files, run commands, build, ship",
+    instruction: "You are in CODE mode. You have full access to all tools. Edit files, run commands, and build things.",
+    allowEdits: true,
+  },
+  ask: {
+    name: "ask",
+    label: "❓ Ask",
+    description: "Read-only Q&A — discuss, explain, explore. No file edits.",
+    instruction: "You are in ASK mode. Answer questions and explain code using only read-only tools (read, glob, grep). Do NOT edit, write, or run commands that modify the project. Do NOT use bash except for read-only commands like ls, cat, pwd.",
+    allowEdits: false,
+  },
+  plan: {
+    name: "plan",
+    label: "📋 Plan",
+    description: "Explore + output a structured plan. No file edits.",
+    instruction: "You are in PLAN mode. Explore the codebase using read-only tools. Then output a numbered plan with: files to modify, approach, and order of changes. Do NOT edit any files. Do NOT run bash except for read-only exploration.",
+    allowEdits: false,
+  },
+};
+
 export function extractToolCalls(text) {
   const results = [];
   const seen = new Set();
@@ -194,12 +219,28 @@ export async function runTurn({
   onEvent,
   signal,
   noTools,
+  mode = "code",
 }) {
   messages.push({ role: "user", content: userText });
   await session?.append({ type: "user", content: userText });
   onEvent?.({ kind: "user", content: userText });
 
-  const tools = noTools || provider.kind === "ollama" ? [] : openAITools();
+  // Apply mode: restrict tools based on mode
+  const chatMode = CHAT_MODES[mode] || CHAT_MODES.code;
+  let modeTools = noTools || provider.kind === "ollama" ? [] : openAITools();
+  if (!chatMode.allowEdits) {
+    const readonlyNames = new Set(["read", "glob", "grep", "webfetch", "websearch", "skill"]);
+    modeTools = modeTools.filter((t) => readonlyNames.has(t.function.name));
+    // Remove write/edit/bash/serve from available tool calls
+  }
+  const tools = modeTools;
+
+  // Inject mode instruction if not already present
+  const hasModeInstruction = messages.some((m) => m.role === "system" && m.content?.includes("You are in"));
+  if (!hasModeInstruction) {
+    messages.splice(1, 0, { role: "system", content: chatMode.instruction });
+  }
+
   let turn = 0;
   let lastFinish = "stop";
   let toolDupCount = 0;

@@ -19,9 +19,13 @@ Join the Discord to report bugs, request features, or just chat about the projec
 
 ## Features
 
-- **Chat-based file editing** — describe what you want to build or change; WRIVON reads, writes, and diffs files in your project
+- **Agentic coding** — reads, writes, edits, and searches files using AI-powered tools. Build anything with natural language prompts.
 - **Multiple free AI providers** — NVIDIA NIM (~90 free models with speed tiers), Cloudflare Workers AI, Groq (fast LPU inference)
 - **Smart model tiers** — `/model` shows a numbered picker: 1) Fast, 2) Coder, 3) Power — no memorized model IDs
+- **Chat modes** — `/ask` (read-only Q&A), `/plan` (explore + structured plan), `/code` (full tool access)
+- **Local web server** — `/serve 8080` to preview websites you build, with SPA routing and directory listings
+- **Web fetch & search** — the AI can browse documentation and search the web for solutions
+- **Subagents** — spawn isolated agents for parallel tasks (refactoring, test generation, research)
 - **Session management** — every conversation is saved; resume with `/resume`, browse with `/sessions`
 - **Streaming responses** — see the model's reply as it's generated, token by token
 - **Syntax highlighting** — code blocks and diffs are colorized inline
@@ -72,11 +76,46 @@ Once WRIVON is running (`npm start`), type anything as a prompt:
 > /model
 ```
 
+## Chat Modes
+
+WRIVON has three modes you can switch between with a command:
+
+| Mode | Command | Behavior |
+|------|---------|----------|
+| **Code** | `/code` | Full tool access — edit files, run commands, build, ship (default) |
+| **Ask** | `/ask` | Read-only Q&A — discuss, explain, explore code. No edits allowed |
+| **Plan** | `/plan` | Explore codebase + output a structured numbered plan. No edits |
+
+Use `/mode` to see the current mode and switch. Why toggle modes? `/ask` prevents accidental edits while exploring, `/plan` forces structured thinking before coding, and `/code` gives full freedom when you're ready.
+
+## Local Web Server
+
+WRIVON can host websites locally for preview:
+
+```bash
+# Start a server on port 8080 serving the current directory
+/serve 8080
+# Or specify a directory
+/serve 3000 ./dist
+# List active servers
+/servers
+# Stop a specific server
+/stop 8080
+# Stop all servers
+/stop --all
+```
+
+The server serves static files (HTML, CSS, JS) with proper MIME types, directory listings, and SPA fallback (index.html for unknown routes).
+
 ## Commands
 
 | Command | Description |
 |---------|-------------|
 | `/help` | Show all commands |
+| `/mode` | Show/switch chat mode (code, ask, plan) |
+| `/code` | Switch to code mode (full tool access) |
+| `/ask` | Switch to ask mode (read-only) |
+| `/plan` | Switch to plan mode (explore + structured plan) |
 | `/model` | Interactive model picker (1=Fast, 2=Coder, 3=Power) |
 | `/model <id>` | Set model by exact ID |
 | `/models` | List curated models for current provider |
@@ -84,12 +123,15 @@ Once WRIVON is running (`npm start`), type anything as a prompt:
 | `/providers` | List all configured providers |
 | `/connect` | Add a new API provider |
 | `/disconnect <name>` | Remove a configured provider |
+| `/serve <port> [dir]` | Start local HTTP server for preview |
+| `/servers` | List active HTTP servers |
+| `/stop <port>` | Stop a local HTTP server |
 | `/commit [message]` | Stage all + commit (auto-generates message) |
 | `/push` | Push current branch to remote |
 | `/diff [target]` | Show git diff (uncommitted, staged, HEAD~1) |
 | `/review [target]` | Code review |
 | `/refactor <target>` | Refactoring mode |
-| `/status` | Show model, provider, session, context stats |
+| `/status` | Show mode, model, provider, session, context stats |
 | `/sessions [--all]` | List past sessions |
 | `/resume <id>` | Load a past session |
 | `/clear` | Clear conversation (keeps system prompt) |

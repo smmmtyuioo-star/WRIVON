@@ -8,6 +8,7 @@ import crypto from "node:crypto";
 import { runShell } from "../util/shell.js";
 import { resolveWithinCwd, checkSandbox, fileExists } from "../util/fs.js";
 import { discoverSkills } from "../skill/discover.js";
+import { startServer, stopServer, listServers } from "../tools/serve.js";
 
 // Commands and patterns that require user approval before execution
 const DANGEROUS_PATTERNS = [
@@ -231,6 +232,87 @@ Provide a task_id to resume a prior subagent session.`,
           }
         });
       });
+    },
+  },
+
+  serve: {
+    name: "serve",
+    description: "Start a local HTTP server to serve static files (HTML, JS, CSS) for local preview. Runs in background until stopped. Use for previewing websites you build. Defaults to serving the current directory.",
+    schema: { ...PARA, properties: { port: { type: "integer", description: "Port number (e.g. 8080)" }, directory: { type: "string", description: "Directory to serve (default: current directory)" } }, required: ["port"] },
+    async run({ port, directory }) {
+      if (typeof port !== "number" && typeof port !== "string") return errResult("port must be a number");
+      const p = parseInt(port, 10);
+      if (isNaN(p) || p < 1 || p > 65535) return errResult(`invalid port: ${port}`);
+      return await startServer(p, directory);
+    },
+  },
+
+  webfetch: {
+    name: "webfetch",
+    description: "Fetch a URL and return its content as text. Use for documentation, API responses, web pages.",
+    schema: { ...PARA, properties: { url: { type: "string", description: "The URL to fetch" } }, required: ["url"] },
+    async run({ url }) {
+      if (!url || typeof url !== "string") return errResult("url is required");
+      try {
+        new URL(url);
+      } catch {
+        return errResult(`invalid URL: ${url}`);
+      }
+      try {
+        const r = await fetch(url, {
+          headers: { "user-agent": "WRIVON/1.0" },
+          signal: AbortSignal.timeout(30000),
+        });
+        if (!r.ok) return errResult(`HTTP ${r.status} ${r.statusText}`);
+        const text = await r.text();
+        const maxLen = 100000;
+        const content = text.length > maxLen ? text.slice(0, maxLen) + `\n... (truncated ${text.length - maxLen} chars)` : text;
+        return { ok: true, output: content };
+      } catch (e) {
+        return errResult(`fetch failed: ${e.message}`);
+      }
+    },
+  },
+
+  websearch: {
+    name: "websearch",
+    description: "Search the web for information. Use for finding documentation, solutions, recent news, APIs, libraries.",
+    schema: { ...PARA, properties: { query: { type: "string", description: "Search query" }, numResults: { type: "integer", description: "Number of results (default 5)" } }, required: ["query"] },
+    async run({ query, numResults }) {
+      if (!query || typeof query !== "string") return errResult("query is required");
+      try {
+        const n = Math.min(Math.max(parseInt(numResults, 10) || 5, 1), 10);
+        const r = await fetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`, {
+          headers: { "user-agent": "WRIVON/1.0" },
+          signal: AbortSignal.timeout(15000),
+        });
+        if (!r.ok) return errResult(`websearch failed: HTTP ${r.status}`);
+        const html = await r.text();
+        const results = [];
+        const linkRe = /<a[^>]+class="result__a"[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi;
+        const snippetRe = /<a[^>]+class="result__snippet"[^>]*>([\s\S]*?)<\/a>/gi;
+        let match;
+        const links = [];
+        while ((match = linkRe.exec(html)) !== null && links.length < n) {
+          const href = match[1].replace(/\/\/duckduckgo\.com\/l\/\?uddg=/, "").replace(/&rut=.*$/, "");
+          const title = match[2].replace(/<[^>]*>/g, "").trim();
+          if (title && href && !href.startsWith("/")) {
+            links.push({ title, href: decodeURIComponent(href) });
+          }
+        }
+        const snippets = [];
+        while ((match = snippetRe.exec(html)) !== null) {
+          snippets.push(match[1].replace(/<[^>]*>/g, "").trim());
+        }
+        for (let i = 0; i < links.length; i++) {
+          const snippet = snippets[i] || "";
+          results.push(`${i + 1}. ${links[i].title}\n   ${links[i].href}\n   ${snippet}`);
+        }
+        if (!results.length) return jsonResult(`(no results for "${query}")`);
+        return jsonResult(results.join("\n\n"));
+      } catch (e) {
+        return errResult(`websearch failed: ${e.message}`);
+      }
     },
   },
 

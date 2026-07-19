@@ -25,6 +25,9 @@ async function main() {
   const showProviders = argv.includes("--list-providers");
   const showKnownProviders = argv.includes("--list-known-providers");
   const connectMode = argv.includes("--connect");
+  const modeFlag = ["--mode", "-m"].find(f => argv.includes(f));
+  const modeIdx = modeFlag ? argv.indexOf(modeFlag) + 1 : -1;
+  const modeVal = modeFlag && modeIdx > 0 && modeIdx < argv.length ? argv[modeIdx] : null;
   const showHelp = argv.includes("--help") || argv.includes("-h");
   const showVersion = argv.includes("--version") || argv.includes("-v");
 
@@ -35,25 +38,33 @@ async function main() {
 
   if (showHelp) {
     console.log(`
-WRIVON v0.1 — a cross-shell CLI AI coding agent.
+WRIVON v0.2 — a cross-shell CLI AI coding agent.
 
 Usage:
   wrivon [options]              Interactive REPL
-  wrivon --print "message"      One-shot mode, print reply and exit
+  wrivon -p "message"           One-shot mode, print reply and exit
+  wrivon -a "prompt"            Agent mode (full tools, one-shot)
+  wrivon --connect              Interactive provider setup wizard
 
 Options:
-  --provider <name>     Provider to use (ollama | openai | nvidia | cloudflare)
+  --provider <name>     Provider to use (ollama | openai | nvidia | cloudflare | groq)
   --model <name>        Override model name
   --base-url <url>      Override provider base URL
   --api-key <key>       Override provider API key
   --sandbox <level>     Filesystem sandbox: read-only | workspace-write | danger-full-access
+  -m, --mode <mode>     Chat mode: code | ask | plan (default: code)
   --no-stream           Disable streaming output
   --list-providers      List configured providers and exit
   --list-known-providers List well-known providers available for /connect
+  -p, --print "msg"     One-shot: send message, print reply, exit
+  -a, --agent "prompt"  Agent mode: full tools in one-shot
   --connect             Interactive CLI wizard to add a new provider
   -h, --help            Show this help
+  -v, --version         Show version
 
 Config: ~/.wrivon/config.json and ./.wrivon/config.json (project-specific)
+Modes:  /code (edit), /ask (read-only Q&A), /plan (explore + plan)
+Serve:  /serve 8080 to preview websites locally
 `.trim());
     return;
   }
@@ -127,6 +138,11 @@ Config: ~/.wrivon/config.json and ./.wrivon/config.json (project-specific)
   if (agentFlag && agentPrompt) {
     await oneShot(provider, cfg, agentPrompt, true);
     return;
+  }
+
+  // Set initial mode from CLI flag
+  if (modeVal && ["code", "ask", "plan"].includes(modeVal)) {
+    globalThis.__WRIVON_INITIAL_MODE = modeVal;
   }
 
   // Interactive REPL.

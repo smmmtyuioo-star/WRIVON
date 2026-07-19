@@ -25,7 +25,8 @@ Join the Discord to report bugs, request features, or just chat about the projec
 - **Chat modes** — `/ask` (read-only Q&A), `/plan` (explore + structured plan), `/code` (full tool access)
 - **Local web server** — `/serve 8080` to preview websites you build, with SPA routing and directory listings
 - **Web fetch & search** — the AI can browse documentation and search the web for solutions
-- **Built-in skills** — 13 pre-installed skill packs: code-review, debugging, deep-research, TDD, planning, architecture, frontend-design, GitHub workflow + agent-orchestration (claude-code, codex, opencode, hermes-agent, subagent-driven-development)
+- **Built-in skills** — 19 pre-installed skill packs across 7 categories: code-review, debugging, deep-research, TDD, planning, architecture, frontend-design, GitHub workflow, agent-orchestration (5 agents) + 6 domain packs (engineering, marketing, c-level-advisor, research, business, compliance) covering 362 extracted skills from the claude-code-skills library
+- **Knowledge system** — `/knowledge <domain>` loads full extracted expertise from 337 system prompt leaks (19 AI vendors), 362 domain skills, and 15,134 files of engineering/marketing/business/research/compliance knowledge
 - **Subagents** — spawn isolated agents for parallel tasks (refactoring, test generation, research)
 - **Session management** — every conversation is saved; resume with `/resume`, browse with `/sessions`
 - **Streaming responses** — see the model's reply as it's generated, token by token
@@ -141,6 +142,11 @@ The server serves static files (HTML, CSS, JS) with proper MIME types, directory
 | `/init` | Project memory setup |
 | `/test [provider]` | Test API connectivity |
 | `/export [--json]` | Export session as markdown or JSON |
+| `/skills` | List available skill packs |
+| `/skills <name>` | Load a skill pack into session |
+| `/agents` | Alias for /skills |
+| `/knowledge` | List available knowledge domains |
+| `/knowledge <domain>` | Load domain knowledge (engineering, marketing, c-level-advisor, etc.) |
 | `/search <query>` | Search past sessions |
 | `/prompt` | Show the system prompt |
 | `/config [key=val]` | View or set config |

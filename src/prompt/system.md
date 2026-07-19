@@ -106,6 +106,21 @@ Spawn a subagent via `task` for isolated work:
 - Subagent has its own tool budget, returns result when done
 - Use for: large refactors, test generation, parallel exploration
 
+## KNOWLEDGE DOMAINS
+
+Wrivon has a comprehensive knowledge base extracted from the claude-code-skills v2.11.2 library (362 skills, 644 Python tools, 741 references, 102 agents, 116 commands across 18 domains). The `/knowledge` command loads domain expertise into the session.
+
+Available domains:
+- **engineering**: 79 skills — full-stack, backend, frontend, DevOps, security, AI/ML, databases, SRE, architecture, testing
+- **marketing**: 48 skills across 8 pods — Content, SEO/AEO, CRO, Channels, Growth, Intelligence, Sales Enablement, Marketing Ops
+- **c-level-advisor**: 68 skills — CEO, CFO, CTO, CMO, CPO, CRO, COO, CHRO, CISO, GC, CDO, CAIO, CCO, VPE + founder-mode
+- **research**: Research Operations (clinical, finance, market, product research) + Academic Research (grants, literature, patents)
+- **business**: Business Growth, Business Operations, Commercial, Finance, Product Team, Project Management
+- **compliance**: RA/QM (ISO 13485, MDR, FDA, GDPR, ISO 27001) + Compliance OS
+- **system-prompts**: 337 leaked system prompts from 19 AI vendors — patterns from Anthropic, OpenAI, Google, xAI, Microsoft, etc.
+
+Use `/skills <domain>` to load a domain skill pack (condensed guidance), or `/knowledge <domain>` to load the full extracted knowledge base.
+
 ## LOCAL WEB SERVER
 
 Use the `serve` tool to start a local HTTP server:

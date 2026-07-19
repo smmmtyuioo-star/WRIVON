@@ -15,13 +15,14 @@ import { buildRepoMap, renderRepoMap, getCachedRepoMap } from "../repo/map.js";
 import { NVIDIA_MODELS, GROQ_MODELS } from "../config/providers.js";
 import { startServer, stopServer, listServers, stopAllServers } from "../tools/serve.js";
 import { discoverSkills, loadSkill } from "../skill/discover.js";
+import { indexKnowledge, loadDomainKnowledge, listDomains } from "../skill/knowledge.js";
 
 const YELLOW = "\x1b[33m";
 const GRAY = "\x1b[90m";
 const RESET = "\x1b[0m";
 
 // Pre-register default slash commands. Users can add more via config.
-const DEFAULT_COMMANDS = ["help", "model", "models", "provider", "providers", "connect", "disconnect", "test", "map", "diff", "prompt", "config", "export", "name", "search", "init", "refactor", "review", "clear", "undo", "commit", "push", "sessions", "resume", "status", "mode", "ask", "plan", "code", "skills", "agents", "serve", "servers", "stop", "exit"];
+const DEFAULT_COMMANDS = ["help", "model", "models", "provider", "providers", "connect", "disconnect", "test", "map", "diff", "prompt", "config", "export", "name", "search", "init", "refactor", "review", "clear", "undo", "commit", "push", "sessions", "resume", "status", "mode", "ask", "plan", "code", "skills", "agents", "knowledge", "serve", "servers", "stop", "exit"];
 
 function printHelp() {
   const mode = globalThis.__WRIVON_CURRENT_MODE || "code";
@@ -59,10 +60,12 @@ function printHelp() {
   ${VIOLET}/search <query>${RESET}           Search past sessions
   ${VIOLET}/name [<name>]${RESET}            Name the current session
 
-  ── Skills & Agents ─────────────────────────────────
+  ── Skills, Agents & Knowledge ─────────────────────
   ${VIOLET}/skills${RESET}                   List available skill packs
   ${VIOLET}/skills <name>${RESET}            Load a skill into session
   ${VIOLET}/agents${RESET}                   Alias for /skills
+  ${VIOLET}/knowledge${RESET}                List knowledge domains
+  ${VIOLET}/knowledge <domain>${RESET}       Load domain knowledge into session
 
   ── Code & Git ──────────────────────────────────────
   ${VIOLET}/map${RESET}                      Show project structure
@@ -700,6 +703,30 @@ After applying changes, run the test suite to verify nothing is broken.`;
           }
         }
         console.log(`\n  ${GRAY}Use /skills <name> to load a skill.${RESET}`);
+        return true;
+      }
+
+      case "/knowledge": {
+        if (arg) {
+          const knowledge = await loadDomainKnowledge(arg);
+          if (!knowledge) {
+            console.log(`  ${YELLOW}⚠${RESET} Knowledge domain "${arg}" not found. Use /knowledge to list available domains.`);
+            return true;
+          }
+          const injected = `## Knowledge Domain: ${knowledge.domain}\n${knowledge.label}\n\n${knowledge.content}`;
+          messages.push({ role: "system", content: injected });
+          console.log(`  ${GREEN}✓${RESET} Knowledge "${knowledge.domain}" loaded (${knowledge.size || knowledge.content.length} chars from ${knowledge.path}).`);
+          return true;
+        }
+        // List available knowledge domains
+        const catalog = await indexKnowledge();
+        const domains = listDomains();
+        console.log(`\n${BOLD}Available Knowledge Domains:${RESET}`);
+        for (const d of domains) {
+          const status = catalog[d.key]?.exists ? `${GREEN}✓${RESET}` : `${GRAY}—${RESET}`;
+          console.log(`  ${status} ${d.key.padEnd(22)} ${GRAY}${d.label}${RESET}`);
+        }
+        console.log(`\n  ${GRAY}Use /knowledge <domain> to load domain expertise.${RESET}`);
         return true;
       }
 

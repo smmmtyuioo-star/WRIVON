@@ -110,7 +110,13 @@ function parseYaml(raw) {
   const obj = {};
   for (const line of raw.split("\n")) {
     const m = /^(\w[\w-]*)\s*:\s*(.*)$/.exec(line);
-    if (m) obj[m[1]] = m[2];
+    if (m) {
+      let val = m[2].trim();
+      if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+        val = val.slice(1, -1);
+      }
+      obj[m[1]] = val;
+    }
   }
   return obj;
 }

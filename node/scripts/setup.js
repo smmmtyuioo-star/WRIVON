@@ -8,7 +8,7 @@ import path from "node:path";
 import readline from "node:readline";
 import process from "node:process";
 
-const PROJECT = path.resolve(import.meta.dirname, "..");
+const PROJECT = path.resolve(import.meta.dirname, "..", "..");
 const ENV_FILE = path.join(PROJECT, ".env.local");
 
 const TEAL = "\x1b[38;5;80m";

@@ -4,7 +4,7 @@
 #   CLOUDFLARE_API_KEY=your_key_here
 #   CLOUDFLARE_ACCOUNT_ID=your_account_id
 
-$envFile = Join-Path (Split-Path -Parent $PSScriptRoot) ".env.local"
+$envFile = Join-Path (Resolve-Path "$PSScriptRoot\..\..") ".env.local"
 if (-not (Test-Path $envFile)) {
   Write-Host "  [MISSING] .env.local not found at $envFile"
   return

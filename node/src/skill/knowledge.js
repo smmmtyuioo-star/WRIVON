@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const EXTRACTED_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "_extracted");
+const EXTRACTED_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..", "_extracted");
 
 const DOMAIN_INDEX = {
   engineering: {

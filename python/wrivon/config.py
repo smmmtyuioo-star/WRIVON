@@ -4,45 +4,39 @@ import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
-DEFAULT_CONFIG = {
-    "provider": "nvidia",
-    "model": "deepseek-ai/deepseek-v4-flash",
-    "providers": {
-        "nvidia": {
-            "baseUrl": "https://integrate.api.nvidia.com/v1",
-            "apiKey": "",
-            "model": "deepseek-ai/deepseek-v4-flash",
-            "fastModel": "deepseek-ai/deepseek-v4-flash",
-            "powerfulModel": "mistralai/mistral-large-3-675b-instruct-2512",
-            "kind": "openai",
-        },
-        "cloudflare": {
-            "baseUrl": "https://api.cloudflare.com/client/v4/accounts",
-            "apiKey": "",
-            "accountId": "",
-            "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
-            "fastModel": "@cf/meta/llama-3.1-8b-instruct-fp8",
-            "powerfulModel": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
-            "kind": "cloudflare",
-        },
-        "groq": {
-            "baseUrl": "https://api.groq.com/openai/v1",
-            "apiKey": "",
-            "model": "llama-3.3-70b-versatile",
-            "fastModel": "llama-3.1-8b-instant",
-            "powerfulModel": "openai/gpt-oss-120b",
-            "kind": "openai",
-        },
-    },
-    "sandbox": {
-        "filesystem": "workspace-write",
-        "network": "allow",
-    },
-    "ui": {
-        "stream": True,
-        "showTools": True,
-    },
-}
+from .shared import load_shared_config
+
+
+def _build_defaults():
+    """Build DEFAULT_CONFIG from the shared wrivon.config.json + env vars."""
+    shared = load_shared_config()
+    providers = {}
+
+    for name, pdef in shared.get("providers", {}).items():
+        env = pdef.get("env", {})
+        p = {
+            "baseUrl": os.environ.get(env.get("baseUrl", ""), pdef.get("base_url", "")),
+            "apiKey": os.environ.get(env.get("apiKey", ""), ""),
+            "model": os.environ.get(env.get("model", ""), pdef.get("models", {}).get("default", "")),
+            "fastModel": pdef.get("models", {}).get("fast", ""),
+            "powerfulModel": pdef.get("models", {}).get("powerful", ""),
+            "kind": pdef.get("kind", "openai"),
+        }
+        if env.get("accountId"):
+            p["accountId"] = os.environ.get(env["accountId"], "")
+        providers[name] = p
+
+    d = shared.get("defaults", {})
+    return {
+        "provider": shared.get("default_provider", "nvidia"),
+        "model": shared.get("default_model", "deepseek-ai/deepseek-v4-flash"),
+        "providers": providers,
+        "sandbox": d.get("sandbox", {"filesystem": "workspace-write", "network": "allow"}),
+        "ui": d.get("ui", {"stream": True, "showTools": True}),
+    }
+
+
+DEFAULT_CONFIG = _build_defaults()
 
 
 def find_env_file():
@@ -115,21 +109,16 @@ def load_config():
             for key in list(pdata.keys()):
                 pdata[key] = expand_env(pdata[key])
 
-    # Apply env var overrides for default providers
-    env_map = {
-        "nvidia": {"apiKey": "NVIDIA_API_KEY", "baseUrl": "WRIVON_NVIDIA_URL", "model": "WRIVON_NVIDIA_MODEL"},
-        "cloudflare": {"apiKey": "CLOUDFLARE_API_KEY", "accountId": "CLOUDFLARE_ACCOUNT_ID", "baseUrl": "WRIVON_CLOUDFLARE_URL", "model": "WRIVON_CLOUDFLARE_MODEL"},
-        "groq": {"apiKey": "GROQ_API_KEY", "baseUrl": "WRIVON_GROQ_URL", "model": "WRIVON_GROQ_MODEL"},
-    }
-    for pname, mapping in env_map.items():
-        if pname in cfg.get("providers", {}):
-            p = cfg["providers"][pname]
-            for key, env_var in mapping.items():
-                val = os.environ.get(env_var)
-                if val:
-                    p[key] = val
-            if not p.get("apiKey") and os.environ.get(mapping.get("apiKey", "")):
-                p["apiKey"] = os.environ[mapping["apiKey"]]
+    # Re-read env vars for apiKey (they may have been set via load_env)
+    for pname, pdata in cfg.get("providers", {}).items():
+        if isinstance(pdata, dict):
+            shared = load_shared_config()
+            if pname in shared.get("providers", {}):
+                env_map = shared["providers"][pname].get("env", {})
+                for config_key, env_var in env_map.items():
+                    val = os.environ.get(env_var)
+                    if val and not pdata.get(config_key):
+                        pdata[config_key] = val
 
     # CLI overrides
     argv = sys.argv[1:]

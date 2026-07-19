@@ -36,6 +36,10 @@ def grep_files(pattern: str, path: str = "", include: str = "") -> str:
         for file_path in search_dir.rglob("*"):
             if file_path.is_dir():
                 continue
+            if "__pycache__" in file_path.parts:
+                continue
+            if file_path.suffix == ".pyc":
+                continue
             if include:
                 if not file_path.match(include) and not file_path.suffix == include:
                     continue

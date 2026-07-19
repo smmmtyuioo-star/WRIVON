@@ -1,0 +1,132 @@
+{
+  "$schema": "https://raw.githubusercontent.com/smmmtyuioo-star/WRIVON/main/wrivon.config.schema.json",
+  "version": 1,
+  "default_provider": "nvidia",
+  "default_model": "deepseek-ai/deepseek-v4-flash",
+  "provider_fallback_order": ["nvidia", "cloudflare", "groq"],
+  "providers": {
+    "nvidia": {
+      "kind": "openai",
+      "base_url": "https://integrate.api.nvidia.com/v1",
+      "supports_parallel_tools": false,
+      "env": {
+        "apiKey": "NVIDIA_API_KEY",
+        "baseUrl": "WRIVON_NVIDIA_URL",
+        "model": "WRIVON_NVIDIA_MODEL"
+      },
+      "models": {
+        "fast": "deepseek-ai/deepseek-v4-flash",
+        "default": "deepseek-ai/deepseek-v4-flash",
+        "powerful": "mistralai/mistral-large-3-675b-instruct-2512"
+      }
+    },
+    "cloudflare": {
+      "kind": "cloudflare",
+      "base_url": "https://api.cloudflare.com/client/v4/accounts",
+      "supports_parallel_tools": false,
+      "env": {
+        "apiKey": "CLOUDFLARE_API_KEY",
+        "accountId": "CLOUDFLARE_ACCOUNT_ID",
+        "baseUrl": "WRIVON_CLOUDFLARE_URL",
+        "model": "WRIVON_CLOUDFLARE_MODEL"
+      },
+      "models": {
+        "fast": "@cf/meta/llama-3.1-8b-instruct-fp8",
+        "default": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+        "powerful": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+      }
+    },
+    "groq": {
+      "kind": "openai",
+      "base_url": "https://api.groq.com/openai/v1",
+      "supports_parallel_tools": true,
+      "env": {
+        "apiKey": "GROQ_API_KEY",
+        "baseUrl": "WRIVON_GROQ_URL",
+        "model": "WRIVON_GROQ_MODEL"
+      },
+      "models": {
+        "fast": "llama-3.1-8b-instant",
+        "default": "llama-3.3-70b-versatile",
+        "powerful": "openai/gpt-oss-120b"
+      }
+    }
+  },
+  "commands": {
+    "/help": { "description": "Show all commands" },
+    "/mode": { "description": "Show/switch chat mode (code, ask, plan)" },
+    "/code": { "description": "Switch to code mode (full tool access)" },
+    "/ask": { "description": "Switch to ask mode (read-only)" },
+    "/plan": { "description": "Switch to plan mode (explore + structured plan)" },
+    "/build": { "description": "Full-stack one-shot builder — plan, generate files, install deps, report" },
+    "/model": { "description": "Interactive model picker (1=Fast, 2=Coder, 3=Power)" },
+    "/models": { "description": "List curated models for current provider" },
+    "/provider": { "description": "Switch provider" },
+    "/providers": { "description": "List all configured providers" },
+    "/connect": { "description": "Add a new API provider" },
+    "/disconnect": { "description": "Remove a configured provider" },
+    "/serve": { "description": "Start local HTTP server for preview" },
+    "/servers": { "description": "List active HTTP servers" },
+    "/stop": { "description": "Stop a local HTTP server" },
+    "/commit": { "description": "Stage all + commit (auto-generates message)" },
+    "/push": { "description": "Push current branch to remote" },
+    "/diff": { "description": "Show git diff (uncommitted, staged, HEAD~1)" },
+    "/review": { "description": "Code review" },
+    "/refactor": { "description": "Refactoring mode" },
+    "/status": { "description": "Show mode, model, provider, session, context stats" },
+    "/sessions": { "description": "List past sessions" },
+    "/resume": { "description": "Load a past session" },
+    "/clear": { "description": "Clear conversation (keeps system prompt)" },
+    "/undo": { "description": "Remove last turn" },
+    "/map": { "description": "Show project structure" },
+    "/init": { "description": "Project memory setup" },
+    "/test": { "description": "Test API connectivity" },
+    "/export": { "description": "Export session as markdown or JSON" },
+    "/skills": { "description": "List available skill packs" },
+    "/agents": { "description": "Alias for /skills" },
+    "/knowledge": { "description": "List or load knowledge domains" },
+    "/search": { "description": "Search past sessions" },
+    "/prompt": { "description": "Show the system prompt" },
+    "/config": { "description": "View or set config" },
+    "/name": { "description": "Name the current session" },
+    "/exit": { "description": "Quit" }
+  },
+  "chat_modes": {
+    "code": {
+      "label": "Code",
+      "sandbox": "workspace-write",
+      "description": "Full tool access — edit files, run commands, build, ship"
+    },
+    "ask": {
+      "label": "Ask",
+      "sandbox": "read-only",
+      "description": "Read-only Q&A — discuss, explain, explore code. No edits"
+    },
+    "plan": {
+      "label": "Plan",
+      "sandbox": "read-only",
+      "description": "Explore codebase + output a structured numbered plan. No edits"
+    }
+  },
+  "tools": {
+    "read": { "description": "Read a file from the filesystem. Returns content with line numbers." },
+    "write": { "description": "Write content to a file. Overwrites existing file." },
+    "edit": { "description": "Edit a file by replacing exact text strings." },
+    "bash": { "description": "Execute a shell command. Returns stdout, stderr, and exit code.", "dangerous": true },
+    "glob": { "description": "Find files matching a glob pattern." },
+    "grep": { "description": "Search file contents using a regex pattern." },
+    "web_fetch": { "description": "Fetch content from a URL and convert to markdown." },
+    "web_search": { "description": "Search the web for information." }
+  },
+  "defaults": {
+    "sandbox": {
+      "filesystem": "workspace-write",
+      "network": "allow"
+    },
+    "ui": {
+      "stream": true,
+      "showTools": true
+    },
+    "bash_timeout_ms": 120000
+  }
+}

@@ -1,6 +1,21 @@
 # WRIVON
 
-A CLI AI coding agent that reads, writes, and edits files in your project. Runs in any terminal — PowerShell, bash, cmd, Windows Terminal.
+<p align="center">
+  <strong>A CLI AI coding agent</strong> — reads, writes, and edits files in your project. Runs in any terminal.
+</p>
+
+<p align="center">
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-green" alt="License: MIT"></a>
+  <a href="#"><img src="https://img.shields.io/badge/Status-v0.1_–_Early_Stage-yellow" alt="Status: v0.1"></a>
+  <a href="https://nodejs.org"><img src="https://img.shields.io/badge/Runtime-Node.js_18%2B-blue" alt="Node.js 18+"></a>
+  <a href="#"><img src="https://img.shields.io/badge/Setup-BYOK_–_Bring_Your_Own_Key-orange" alt="BYOK"></a>
+  <a href="https://discord.gg/X7Rtphrxn"><img src="https://img.shields.io/badge/Discord-join_chat-7289DA" alt="Discord"></a>
+</p>
+
+## Community
+
+Join the Discord to report bugs, request features, or just chat about the project:  
+[discord.gg/X7Rtphrxn](https://discord.gg/X7Rtphrxn)
 
 ## Features
 
@@ -165,7 +180,15 @@ Known limitations:
 
 ## Contributing
 
-Issues and feedback welcome. This is a practical tool built for real use — if something doesn't work or could be clearer, open an issue.
+Issues and feedback welcome — report bugs or request features on GitHub or join the Discord. Every contribution helps shape what this becomes.
+
+## Disclaimer
+
+WRIVON is built by **Rishav Jha** — a solo developer, working with AI coding tools and some creativity. This project is in early stages and built one piece at a time.
+
+Please don't compare it directly to large-team or well-funded tools. It's made by hand, with care, and it will grow better with your contributions and feedback.
+
+---
 
 ## License
 

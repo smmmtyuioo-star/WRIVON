@@ -14,13 +14,14 @@ import { renderStream, printSplash, startSpinner, stopSpinner, drawInputBar } fr
 import { buildRepoMap, renderRepoMap, getCachedRepoMap } from "../repo/map.js";
 import { NVIDIA_MODELS, GROQ_MODELS } from "../config/providers.js";
 import { startServer, stopServer, listServers, stopAllServers } from "../tools/serve.js";
+import { discoverSkills, loadSkill } from "../skill/discover.js";
 
 const YELLOW = "\x1b[33m";
 const GRAY = "\x1b[90m";
 const RESET = "\x1b[0m";
 
 // Pre-register default slash commands. Users can add more via config.
-const DEFAULT_COMMANDS = ["help", "model", "models", "provider", "providers", "connect", "disconnect", "test", "map", "diff", "prompt", "config", "export", "name", "search", "init", "refactor", "review", "clear", "undo", "commit", "push", "sessions", "resume", "status", "mode", "ask", "plan", "code", "serve", "servers", "stop", "exit"];
+const DEFAULT_COMMANDS = ["help", "model", "models", "provider", "providers", "connect", "disconnect", "test", "map", "diff", "prompt", "config", "export", "name", "search", "init", "refactor", "review", "clear", "undo", "commit", "push", "sessions", "resume", "status", "mode", "ask", "plan", "code", "skills", "agents", "serve", "servers", "stop", "exit"];
 
 function printHelp() {
   const mode = globalThis.__WRIVON_CURRENT_MODE || "code";
@@ -57,6 +58,11 @@ function printHelp() {
   ${VIOLET}/export [--json]${RESET}          Export session as markdown or JSON
   ${VIOLET}/search <query>${RESET}           Search past sessions
   ${VIOLET}/name [<name>]${RESET}            Name the current session
+
+  ── Skills & Agents ─────────────────────────────────
+  ${VIOLET}/skills${RESET}                   List available skill packs
+  ${VIOLET}/skills <name>${RESET}            Load a skill into session
+  ${VIOLET}/agents${RESET}                   Alias for /skills
 
   ── Code & Git ──────────────────────────────────────
   ${VIOLET}/map${RESET}                      Show project structure
@@ -658,6 +664,44 @@ After applying changes, run the test suite to verify nothing is broken.`;
         messages.push({ role: "system", content: CHAT_MODES.code.instruction });
         console.log(`\n${GREEN}✓${RESET} Switched to ${getModeLabel("code")} mode. Full tool access.`);
         return true;
+
+      case "/skills":
+      case "/agents": {
+        if (arg) {
+          const skillContent = await loadSkill(arg);
+          if (!skillContent) {
+            console.log(`  ${YELLOW}⚠${RESET} Skill "${arg}" not found. Use /skills to list available skills.`);
+            return true;
+          }
+          const injected = `The following skill "${arg}" has been loaded. Follow its guidance:\n\n${skillContent}`;
+          messages.push({ role: "system", content: injected });
+          console.log(`  ${GREEN}✓${RESET} Skill "${arg}" loaded into session (${skillContent.length} chars).`);
+          return true;
+        }
+        // List available skills grouped by category
+        const all = await discoverSkills();
+        if (!all.length) {
+          console.log(`  ${GRAY}No skills available.${RESET}`);
+          return true;
+        }
+        console.log(`\n${BOLD}Available Skills:${RESET}`);
+        const cats = {};
+        for (const s of all) {
+          const cat = s.category || "other";
+          if (!cats[cat]) cats[cat] = [];
+          cats[cat].push(s);
+        }
+        for (const [cat, skills] of Object.entries(cats)) {
+          console.log(`\n  ${CYAN}${cat}${RESET}`);
+          for (const s of skills) {
+            const name = s.name.padEnd(24);
+            const desc = (s.description || "").slice(0, 60);
+            console.log(`    ${name} ${GRAY}${desc}${RESET}`);
+          }
+        }
+        console.log(`\n  ${GRAY}Use /skills <name> to load a skill.${RESET}`);
+        return true;
+      }
 
       case "/serve": {
         const serveParts = arg.split(/\s+/);

@@ -25,7 +25,7 @@ Join the Discord to report bugs, request features, or just chat about the projec
 - **Chat modes** — `/ask` (read-only Q&A), `/plan` (explore + structured plan), `/code` (full tool access)
 - **Local web server** — `/serve 8080` to preview websites you build, with SPA routing and directory listings
 - **Web fetch & search** — the AI can browse documentation and search the web for solutions
-- **Built-in skills** — 8 pre-installed skill packs: code-review, debugging, deep-research, TDD, planning, architecture, frontend-design, GitHub workflow
+- **Built-in skills** — 13 pre-installed skill packs: code-review, debugging, deep-research, TDD, planning, architecture, frontend-design, GitHub workflow + agent-orchestration (claude-code, codex, opencode, hermes-agent, subagent-driven-development)
 - **Subagents** — spawn isolated agents for parallel tasks (refactoring, test generation, research)
 - **Session management** — every conversation is saved; resume with `/resume`, browse with `/sessions`
 - **Streaming responses** — see the model's reply as it's generated, token by token

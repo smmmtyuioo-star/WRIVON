@@ -20,21 +20,61 @@ export async function discoverSkills() {
       const entries = await fs.readdir(dir, { withFileTypes: true });
       for (const ent of entries) {
         if (!ent.isDirectory()) continue;
-        if (seen.has(ent.name)) continue;
-        seen.add(ent.name);
-        const skillMd = path.join(dir, ent.name, "SKILL.md");
-        try {
-          const raw = await fs.readFile(skillMd, "utf8");
-          const parsed = parseSkillMd(raw);
-          if (parsed) {
-            skills.push({ ...parsed, directory: path.join(dir, ent.name) });
-          }
-        } catch { /* no SKILL.md, skip */ }
+        await scanSkillDir(dir, ent.name, skills, seen);
       }
     } catch { /* directory doesn't exist */ }
   }
   _skillCache = skills;
   return skills;
+}
+
+export async function loadSkill(name) {
+  const skills = await discoverSkills();
+  const match = skills.find(s => s.name === name);
+  if (!match) return null;
+  const fullFile = match.content;  // already parsed
+  // Re-read raw for complete content with frontmatter metadata strip
+  const skillMd = path.join(match.directory, "SKILL.md");
+  try {
+    const raw = await fs.readFile(skillMd, "utf8");
+    const parsed = parseSkillMd(raw);
+    return parsed ? parsed.content : null;
+  } catch {
+    return null;
+  }
+}
+
+async function scanSkillDir(baseDir, entryName, skills, seen) {
+  const fullDir = path.join(baseDir, entryName);
+  const skillMd = path.join(fullDir, "SKILL.md");
+  // Check if this directory itself is a skill (top-level)
+  try {
+    const raw = await fs.readFile(skillMd, "utf8");
+    const parsed = parseSkillMd(raw);
+    if (parsed && !seen.has(parsed.name)) {
+      seen.add(parsed.name);
+      skills.push({ ...parsed, category: "general", directory: fullDir });
+      return;
+    }
+  } catch { /* no SKILL.md — check subdirectories */ }
+  // No SKILL.md — this is a category directory; scan subdirectories
+  const category = entryName;
+  try {
+    const sub = await fs.readdir(fullDir, { withFileTypes: true });
+    for (const s of sub) {
+      if (!s.isDirectory()) continue;
+      const subDir = path.join(fullDir, s.name);
+      const subMd = path.join(subDir, "SKILL.md");
+      try {
+        const raw = await fs.readFile(subMd, "utf8");
+        const parsed = parseSkillMd(raw);
+        if (parsed && !seen.has(parsed.name)) {
+          seen.add(parsed.name);
+          skills.push({ ...parsed, category, directory: subDir });
+        }
+      } catch { /* skip */ }
+    }
+  } catch { /* skip */ }
 }
 
 export async function loadSkillGuidance() {

@@ -17,7 +17,7 @@ GREEN = "green"
 YELLOW = "yellow"
 RED = "red"
 GRAY = "bright_black"
-TEAL = "teal"
+TEAL = "dark_cyan"
 BOLD = "bold"
 
 
@@ -25,9 +25,9 @@ def render_header():
     """Render the WRIVON splash header."""
     console.print()
     console.print(Panel(
-        Text.from_markup("[bold teal]WRIVON[/bold teal] [bright_black]v0.2[/bright_black] — [italic]a CLI AI coding agent[/italic]"),
+        Text.from_markup(f"[bold {TEAL}]WRIVON[/bold {TEAL}] [bright_black]v0.2[/bright_black] — [italic]a CLI AI coding agent[/italic]"),
         box=box.ROUNDED,
-        border_style="teal",
+        border_style=TEAL,
     ))
     console.print()
 
@@ -123,4 +123,4 @@ def render_model_picker(models: list, current: str):
 
 def render_splash_small():
     """Render a minimal splash."""
-    console.print(f"[teal]WRIVON[/] [bright_black]v0.2[/] — Type /help for commands")
+    console.print(f"[{TEAL}]WRIVON[/] [bright_black]v0.2[/] — Type /help for commands")
